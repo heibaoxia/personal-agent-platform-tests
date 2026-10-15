@@ -35,10 +35,10 @@ class AssetMigrationTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="agent-asset-migration-")
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name) / "workspace"
+        self.root = Path(self.temp.name).resolve() / "workspace"
         self.root.mkdir()
         self.tool = load_tool()
-        self.tool.JOURNAL_ROOT = Path(self.temp.name) / "external-journals"
+        self.tool.JOURNAL_ROOT = self.root.parent / "external-journals"
 
     def plan(self, *, source="projects/old", target="projects/new", files=None, links=None):
         source_root = self.root / source
@@ -227,6 +227,22 @@ class AssetMigrationTests(unittest.TestCase):
         self.assertEqual((self.root / "projects/old/README.md").read_bytes(), b"# Old project\n")
         self.assertEqual((self.root / "projects/old/notes/topic.md").read_bytes(), b"topic\n")
         self.assertFalse((self.root / "projects/new/README.md").exists())
+
+    def test_default_journal_resolves_system_temporary_directory_aliases(self):
+        physical = Path(self.temp.name).resolve()
+        alias = physical / "temp-alias"
+        try:
+            alias.symlink_to(physical, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("directory symbolic links are unavailable")
+        with patch.object(tempfile, "gettempdir", return_value=str(alias)):
+            tool = load_tool()
+        self.assertEqual(tool.JOURNAL_ROOT, physical / "personal-agent-asset-migrations")
+        tool._check_journal_location(self.root)
+        tool.JOURNAL_ROOT = alias / "user-configured-journal"
+        with self.assertRaises(tool.MigrationError) as rejected:
+            tool._check_journal_location(self.root)
+        self.assertEqual(rejected.exception.code, "JOURNAL_INVALID")
 
     def test_link_update_is_applied_to_staged_target_and_restore_recovers_original_bytes(self):
         plan = self.plan(links={"projects/old/README.md": (

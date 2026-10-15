@@ -4,7 +4,12 @@ This repository is an explicitly approved, public test snapshot for Agent
 Architect 3.2.0. It is not the product release repository.
 
 Canonical Skill source:
-`heibaoxia/My-Personal-Agent@f99fb32326f484834d269d33a9de19d161287f55`
+`heibaoxia/My-Personal-Agent@b54c25284dd3caa1dd0a1c255ca14a43e1a9940a`
+
+The first CI run exposed directory-alias handling and Windows stdout encoding
+issues. This revision includes regression checks for those failures, preserves
+the original plan-location and user-symlink restrictions, and reruns the same
+platform matrix.
 
 The snapshot includes maintenance tools, their regression tests and synthetic
 `samples/agent-scaffold` fixtures only. It excludes the development repository's

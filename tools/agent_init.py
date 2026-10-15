@@ -147,6 +147,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass
     args = _build_parser().parse_args(argv)
     try:
         _validate_inputs(args.agent_id, args.purpose)

@@ -25,7 +25,7 @@ MAX_BACKUP_BYTES = 128 * 1024 * 1024
 MAX_JOURNAL_BYTES = 2 * MAX_BACKUP_BYTES + 16 * 1024 * 1024
 MAX_LINK_SCAN_FILES = 5000
 MAX_TEXT_BYTES = 2 * 1024 * 1024
-JOURNAL_ROOT = Path(tempfile.gettempdir()) / "personal-agent-asset-migrations"
+JOURNAL_ROOT = Path(tempfile.gettempdir()).resolve() / "personal-agent-asset-migrations"
 RESERVED = re.compile(r"(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?")
 PRUNED_LINK_DIRS = frozenset({".git", ".hg", ".svn", ".venv", "venv", "node_modules",
                               "__pycache__", ".cache", "cache", "build", "dist", "target"})

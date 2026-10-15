@@ -89,6 +89,47 @@ class ScaffoldIntegrationTests(unittest.TestCase):
         shutil.copytree(MINIMAL, path)
         return path
 
+    def test_workspace_parent_alias_matches_resolved_plan_without_relaxing_plan_location(self):
+        actual = self.workspace("physical")
+        workspace = actual / "workspace"
+        shutil.copytree(MINIMAL, workspace)
+        alias = self.tmp / "alias"
+        try:
+            alias.symlink_to(actual, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("directory symbolic links are unavailable")
+        command_target = alias / "workspace"
+        entry = (workspace / "AGENTS.md").read_text(encoding="utf-8")
+        plan = self.make_plan(workspace, {"AGENTS.md": entry + "\nalias check\n"})
+        code, checked = invoke(CLI, "check", command_target, "--plan-file", plan)
+        self.assertEqual((code, checked["status"]), (0, "ok"), checked)
+        different = json.loads(plan.read_text(encoding="utf-8"))
+        different["workspace"] = str(actual / "different-workspace")
+        wrong = self.tmp / "different-plan.json"
+        wrong.write_text(json.dumps(different), encoding="utf-8")
+        code, rejected = invoke(CLI, "check", command_target, "--plan-file", wrong)
+        self.assertEqual(code, 1, rejected)
+        self.assertEqual(rejected["errors"][0]["code"], "PLAN_WORKSPACE_MISMATCH")
+        inside = workspace / "plan.json"
+        shutil.copyfile(plan, inside)
+        code, rejected = invoke(CLI, "check", command_target, "--plan-file", inside)
+        self.assertEqual(code, 1, rejected)
+        self.assertEqual(rejected["errors"][0]["code"], "PLAN_FILE_INSIDE_WORKSPACE")
+        external_link = workspace / "external-plan.json"
+        external_link.symlink_to(plan)
+        code, rejected = invoke(CLI, "check", workspace, "--plan-file", external_link)
+        self.assertEqual(code, 1, rejected)
+        self.assertEqual(rejected["errors"][0]["code"], "PLAN_FILE_INSIDE_WORKSPACE")
+
+    def test_init_output_remains_utf8_under_a_legacy_console_encoding(self):
+        target = self.tmp / "init-encoding"
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "tools/agent_init.py"), str(target),
+             "--agent-id", "example", "--purpose", "local task"],
+            capture_output=True, env={**os.environ, "PYTHONIOENCODING": "cp1252"}, cwd=ROOT)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
+        self.assertIn("AGENTS.md", result.stdout.decode("utf-8"))
+
     def make_plan(self, workspace: Path, files: dict[str, str | None], name: str = "plan.json", description_sync: str | None = None) -> Path:
         baseline: dict[str, str | None] = {}
         for rel in files:

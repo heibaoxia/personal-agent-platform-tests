@@ -175,17 +175,22 @@ def read_json(source: str | None, raw_input: str | None = None) -> dict:
 
 def parse_plan(workspace: str, source: str | None, raw_input: str | None = None) -> dict:
     if source:
-        source_path = os.path.abspath(os.path.expanduser(source))
-        try:
-            if os.path.commonpath([source_path, workspace]) == workspace:
-                raise PlanError("PLAN_FILE_INSIDE_WORKSPACE", "plan file must be outside the target workspace")
-        except ValueError:
-            pass
+        source_path = abs_workspace(source)
+        for plan_path, target_path in (
+                (source_path, workspace),
+                (os.path.realpath(source_path), os.path.realpath(workspace))):
+            try:
+                if os.path.commonpath([plan_path, target_path]) == target_path:
+                    raise PlanError("PLAN_FILE_INSIDE_WORKSPACE", "plan file must be outside the target workspace")
+            except ValueError:
+                pass
     plan = read_json(source, raw_input)
     if plan.get("schemaVersion") != SCHEMA_VERSION:
         raise PlanError("PLAN_SCHEMA_VERSION", "plan schemaVersion must be 1")
     declared = plan.get("workspace")
-    if not isinstance(declared, str) or abs_workspace(declared) != workspace:
+    if (not isinstance(declared, str)
+            or os.path.normcase(os.path.realpath(abs_workspace(declared)))
+            != os.path.normcase(os.path.realpath(workspace))):
         raise PlanError("PLAN_WORKSPACE_MISMATCH", "plan workspace does not match the command target")
     baseline = plan.get("baseline")
     files = plan.get("files")
