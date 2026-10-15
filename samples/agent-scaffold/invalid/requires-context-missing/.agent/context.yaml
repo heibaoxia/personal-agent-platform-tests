@@ -1,0 +1,9 @@
+categories:
+  - "active-task"
+sources:
+  - "user-statement"
+states:
+  - "temporary"
+  - "pending"
+  - "confirmed"
+writePolicy: "confirm"

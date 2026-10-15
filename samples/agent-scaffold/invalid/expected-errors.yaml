@@ -1,0 +1,83 @@
+# 违规样例验收清单
+
+本目录包含按类别拆分的独立工作空间。每个子目录都应由
+`tools/validate_scaffold.py --json <目录>` 返回退出码 `1`，并至少包含表中列出的稳定错误码。
+路径违规和非法类型可能同时产生合理的索引/磁盘一致性连带错误；这不改变主错误类别。
+
+## 错误码
+
+下表列出本清单涉及的稳定错误码，不是校验器错误码全集。
+
+| 错误码 | 含义 |
+| --- | --- |
+| `SCAFFOLD_FILE_MISSING` | 根入口 `AGENTS.md` 不存在 |
+| `SCAFFOLD_FIELD_MISSING` | 缺少必填字段 |
+| `SCAFFOLD_FIELD_TYPE` | 字段类型不符合契约 |
+| `SCAFFOLD_ENUM_INVALID` | 版本或枚举值不支持 |
+| `SCAFFOLD_DUPLICATE_ID` | 索引、路径或状态集合出现重复标识 |
+| `SCAFFOLD_PATH_ABSOLUTE` | 索引路径是绝对路径 |
+| `SCAFFOLD_PATH_ESCAPE` | 索引路径含路径逃逸段或解析到工作空间外 |
+| `SCAFFOLD_DISK_UNREGISTERED` | 约定目录存在未登记文件 |
+| `SCAFFOLD_FILE_ID_MISMATCH` | 对象 id 与文件名主干不一致 |
+| `SCAFFOLD_INDEX_PATH_MISMATCH` | 索引路径与对象 id 的约定路径不一致 |
+| `SCAFFOLD_REF_DANGLING` | Skill 或 Workflow 引用无法解析 |
+| `SCAFFOLD_POLICY_CONFIRMATION` | 有副作用的 Skill 缺少确认要求 |
+| `SCAFFOLD_POLICY_EXTERNAL_INTEGRATION` | 外部 Skill 没有 Integration 索引 |
+| `SCAFFOLD_CONTEXT_CATEGORY_DANGLING` | `requires` 引用未声明的 Context 类别 |
+| `SCAFFOLD_SLUG_INVALID` | 标识或引用不是小写 slug |
+| `SCAFFOLD_REQUIREMENT_SOURCE` | `requires` 携带了与来源不匹配的专属字段 |
+| `SCAFFOLD_REQUIREMENT_POLICY` | `requires.note` 与缺失策略不匹配 |
+| `SCAFFOLD_YAML_UNSUPPORTED` | YAML 子集不支持的语法结构 |
+| `SCAFFOLD_READ_BEFORE_MISSING` | `readBefore` 引用的文件不存在或不是文件 |
+
+## 覆盖表
+
+| 目录 | 主错误码 | 可能的连带错误 |
+| --- | --- | --- |
+| `missing-entry/` | `SCAFFOLD_FILE_MISSING` | 无 |
+| `missing-field-skill/` | `SCAFFOLD_FIELD_MISSING` | 无 |
+| `invalid-enum/` | `SCAFFOLD_ENUM_INVALID` | 无 |
+| `invalid-type/` | `SCAFFOLD_FIELD_TYPE` | `SCAFFOLD_DISK_UNREGISTERED` |
+| `duplicate-id-same-list/` | `SCAFFOLD_DUPLICATE_ID` | 无 |
+| `duplicate-id-across-types/` | `SCAFFOLD_DUPLICATE_ID` | 无 |
+| `path-escape-traversal/` | `SCAFFOLD_PATH_ESCAPE` | `SCAFFOLD_DISK_UNREGISTERED` |
+| `path-escape-absolute/` | `SCAFFOLD_PATH_ABSOLUTE` | `SCAFFOLD_DISK_UNREGISTERED` |
+| `id-filename-mismatch/` | `SCAFFOLD_FILE_ID_MISMATCH` | `SCAFFOLD_INDEX_PATH_MISMATCH` |
+| `orphan-file/` | `SCAFFOLD_DISK_UNREGISTERED` | 无 |
+| `dangling-reference/` | `SCAFFOLD_REF_DANGLING` | 无 |
+| `policy-writes-workspace-no-confirmation/` | `SCAFFOLD_POLICY_CONFIRMATION` | 无 |
+| `policy-calls-external-no-confirmation/` | `SCAFFOLD_POLICY_CONFIRMATION` | `SCAFFOLD_POLICY_EXTERNAL_INTEGRATION` |
+| `policy-calls-external-no-integration/` | `SCAFFOLD_POLICY_EXTERNAL_INTEGRATION` | 无 |
+| `requires-context-missing/` | `SCAFFOLD_CONTEXT_CATEGORY_DANGLING` | 无 |
+| `requires-integration-missing/` | `SCAFFOLD_REF_DANGLING` | 无 |
+| `requires-duplicate-id/` | `SCAFFOLD_DUPLICATE_ID` | 无 |
+| `requires-source-field-missing/` | `SCAFFOLD_FIELD_MISSING`, `SCAFFOLD_REQUIREMENT_SOURCE` | 无 |
+| `requires-invalid-fields/` | `SCAFFOLD_FIELD_MISSING` | `SCAFFOLD_FIELD_EMPTY`, `SCAFFOLD_FIELD_TYPE`, `SCAFFOLD_FIELD_UNKNOWN`, `SCAFFOLD_ENUM_INVALID`, `SCAFFOLD_SLUG_INVALID`, `SCAFFOLD_REQUIREMENT_POLICY` |
+| `requires-invalid-list/` | `SCAFFOLD_FIELD_TYPE` | 无 |
+| `requires-multiline-purpose/` | `SCAFFOLD_FIELD_TYPE` | 无 |
+| `requires-invalid-policy/` | `SCAFFOLD_ENUM_INVALID` | 无 |
+| `requires-note-mismatch/` | `SCAFFOLD_REQUIREMENT_POLICY` | `SCAFFOLD_FIELD_EMPTY` |
+| `requires-degrade-note-missing/` | `SCAFFOLD_FIELD_MISSING` | 无 |
+| `requires-flow-list/` | `SCAFFOLD_YAML_UNSUPPORTED` | 无 |
+| `requires-inline-mapping/` | `SCAFFOLD_FIELD_TYPE` | `SCAFFOLD_FIELD_MISSING`, `SCAFFOLD_FIELD_UNKNOWN` |
+| `read-before-empty/` | `SCAFFOLD_FIELD_EMPTY` | 无 |
+| `read-before-absolute/` | `SCAFFOLD_PATH_ABSOLUTE` | 无 |
+| `read-before-traversal/` | `SCAFFOLD_PATH_ESCAPE` | 无 |
+| `read-before-missing/` | `SCAFFOLD_READ_BEFORE_MISSING` | 无 |
+
+## 验收命令
+
+```powershell
+python tools/validate_scaffold.py --self-test
+python tools/validate_scaffold.py samples/agent-scaffold/minimal
+python tools/validate_scaffold.py samples/agent-scaffold/extended
+
+Get-ChildItem -Directory samples/agent-scaffold/invalid | ForEach-Object {
+  python tools/validate_scaffold.py --json $_.FullName
+  "exit=$LASTEXITCODE name=$($_.Name)"
+}
+```
+
+对同一个目录连续运行两次 `--json`，输出必须逐字节一致；运行前后目标目录文件内容和修改时间不得变化。无参数、非目录路径、不存在路径以及 `--self-test` 同时带工作空间时，退出码必须是 `2`。
+
+违规样例覆盖：缺入口、缺字段、非法类型、非法枚举、同列表和跨类型重复 id、路径逃逸、孤立文件、文件名不一致、悬空引用、写入/外部调用的确认策略冲突，以及 `requires` 的字段类型、来源、引用、策略和块式解析边界。

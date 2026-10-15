@@ -1,0 +1,54 @@
+name: platform-smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Record real macOS checks
+        shell: zsh {0}
+        run: python3 -X utf8 -B tools/platform_smoke.py --json --regression --output-file platform-macos-${{ matrix.python }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: platform-macos-${{ matrix.python }}
+          path: platform-macos-${{ matrix.python }}.json
+          retention-days: 30
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Record real Windows checks
+        shell: pwsh
+        run: python -X utf8 -B tools/platform_smoke.py --json --regression --output-file platform-windows.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: platform-windows
+          path: platform-windows.json
+          retention-days: 30

@@ -1,0 +1,26 @@
+writePolicy: "confirm"
+categories:
+  - "workspace-profile"
+  - "user-preferences"
+  - "active-task"
+sources:
+  - "agent-md"
+  - "user-statement"
+  - "session-observation"
+states:
+  - "temporary"
+  - "pending"
+  - "confirmed"
+
+---
+
+# Context 声明
+
+本文件只声明默认可用的信息类别、来源、状态集合和写入策略。
+
+- `writePolicy` 在本契约版本中只能是 `confirm`：任何写入都需要用户确认。
+- `states` 恰好是 `temporary`、`pending`、`confirmed` 三种。
+- `categories` 和 `sources` 只列出本样例实际使用的声明，不代表运行时条目已经存在。
+
+**边界**：本文件不是行为规则，也不是状态记录。读写、冲突处理、删除、过期和持久化
+由后续的 Context runtime change 定义，本 change 不实现这些行为，也不保存任何实际条目。

@@ -1,0 +1,19 @@
+违规样例：缺入口（missing-entry）
+
+本目录故意命名为 `AGENTS.md.txt`，因此工作空间根目录不存在唯一必需入口 `AGENTS.md`。
+
+- 预期错误类别：入口缺失，稳定错误码 `SCAFFOLD_FILE_MISSING`（路径 `AGENTS.md`）。
+  已实测：单跑本目录输出 `AGENTS.md:: SCAFFOLD_FILE_MISSING: file not found: AGENTS.md`，退出码 1。
+- 本目录没有 frontmatter，也不声明任何索引，因此不存在其它违规。
+- 该文件是本次违规声明本身，不是工作空间对象，不参与索引双向一致性检查。
+
+验收命令：
+
+```powershell
+python tools\validate_scaffold.py samples\agent-scaffold\invalid\missing-entry
+# 预期：退出码 1，输出包含 SCAFFOLD_FILE_MISSING（已实测通过）
+```
+
+```powershell
+python tools\validate_scaffold.py --json samples\agent-scaffold\invalid\missing-entry
+```

@@ -1,0 +1,19 @@
+{
+  "assetName": "architect-bundle-3.2.0.zip",
+  "bundleVersion": "3.2.0",
+  "contractVersion": "1",
+  "evaluationVersion": "1",
+  "files": {
+    "agent_asset_migration.py": "cef4a9631857ce9146d961333d0758dde30fb7670bc9156d08bcdc758c121bca",
+    "agent_evaluation.py": "d0dfc79be23401b05dd8535108bc2da27b5ac1132230ac2de489ce4460bba57f",
+    "agent_scaffold.py": "c9dcef36997dc6c793db68ab857cb26483ee18d36a9e6a3a17ebc827b20972c1",
+    "scaffold-evaluate.md": "df5e775959d448f9eeb3fc26d980d19c6d854f751cd68a78190b402b447ef7fb",
+    "validate_scaffold.py": "124196485e465ee017e42d371414a48d5d203405fd5ab6d60ceb8857c77c4567"
+  },
+  "migrationVersion": "1",
+  "schemaVersion": 1,
+  "source": "tools/",
+  "sourceCommit": "f99fb32326f484834d269d33a9de19d161287f55",
+  "sourceRepository": "heibaoxia/My-Personal-Agent",
+  "toolVersion": "3.2.0"
+}
